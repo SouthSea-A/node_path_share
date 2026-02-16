@@ -59,7 +59,7 @@ struct path_info
 };
 ```
 ### path
-完整的路径表示（用于导出或导入路径）。
+完整的路径表示（用于导出路径）。
 ```
 struct path
 {
