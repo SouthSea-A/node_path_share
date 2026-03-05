@@ -1,14 +1,14 @@
-﻿#pragma once
+#pragma once
 #include <vector>
 #include <algorithm>
 #include <unordered_map>
 
 namespace node_path
 {
+
 	//基本数据长度
 	using data_type_base_unsigned = uint64_t;
 	using data_type_base_signed = int64_t;
-
 
 	using node_index = data_type_base_unsigned;//节点编号
 	using node_pos = data_type_base_unsigned;//节点真实储存位置
@@ -28,7 +28,6 @@ namespace node_path
 	constexpr path_index PATH_INVALID_INDEX = 0xFFFFFFFFFFFFFFFF;//无效的路径编号
 	constexpr path_pos PATH_INVALID_POS = 0xFFFFFFFFFFFFFFFF;//无效的路径信息储存位置
 	constexpr path_len PATH_INVALID_LEN = 0xFFFFFFFFFFFFFFFF;//无效的路径长度
-
 
 
 	//前驱储存结构
@@ -240,7 +239,7 @@ namespace node_path
 		{
 
 		}
-		node(node_data&& data_) :
+		node(node_data&& data_) noexcept:
 			index(NODE_INVALID_INDEX), data(std::move(data_))
 		{
 
@@ -260,24 +259,24 @@ namespace node_path
 
 		}
 	public:
-		node_index get_index() const
+		node_index get_index() const noexcept
 		{
 			return this->index;
 		}
-		node_data& get_data_ref()
+		node_data& get_data_ref() noexcept
 		{
 			return this->data;
 		}
-		const node_data& get_const_data_ref() const
+		const node_data& get_const_data_ref() const noexcept
 		{
 			return this->data;
 		}
-		bool get_validity_node_index() const
+		bool get_validity_node_index() const noexcept
 		{
 			return this->index != NODE_INVALID_INDEX;
 		}
 	public:
-		bool set_index(node_index index)
+		bool set_index(node_index index) noexcept
 		{
 			if (index == NODE_INVALID_INDEX)
 				return false;
@@ -290,7 +289,7 @@ namespace node_path
 			this->data = data;
 			return;
 		}
-		void set_data(node_data&& data)
+		void set_data(node_data&& data) noexcept
 		{
 			this->data = std::move(data);
 			return;
@@ -307,12 +306,12 @@ namespace node_path
 		std::vector<path_index> path_index_free;//空闲路径编号列表
 	private:
 		//检测节点编号是否有效
-		bool test_validity_node_index(node_index index) const
+		bool test_validity_node_index(node_index index) const noexcept
 		{
 			return index != NODE_INVALID_INDEX;
 		}
 		//检测前驱位置是否有效
-		bool test_validity_node_pos(node_pos pos) const
+		bool test_validity_node_pos(node_pos pos) const noexcept
 		{
 			if (pos == NODE_INVALID_POS)
 				return false;
@@ -328,14 +327,14 @@ namespace node_path
 			return target != NODE_INVALID_POS && (target < this->node_set.size() || target == NODE_ROOT_POS);//确保前驱未被删除
 		}
 		//检测路径中的位置是否有效
-		bool test_validity_node_pos_get(path_index path, node_pos_get pos) const
+		bool test_validity_node_pos_get(path_index path, node_pos_get pos) const noexcept
 		{
 			const path_info* path_info_target = get_const_path_info_by_path_pos_ptr(get_path_pos(path));
 
 			return path_info_target == nullptr ? false : pos < path_info_target->info.len;//确保路径存在且节点位置在路径中
 		}
 		//检测路径编号是否有效
-		bool test_validity_path_index(path_index index) const
+		bool test_validity_path_index(path_index index) const noexcept
 		{
 			if (index == PATH_INVALID_INDEX)
 				return false;
@@ -343,17 +342,17 @@ namespace node_path
 			return get_path_pos(index) != PATH_INVALID_POS;
 		}
 		//检测路径位置是否有效
-		bool test_validity_path_pos(path_pos pos) const
+		bool test_validity_path_pos(path_pos pos) const noexcept
 		{
 			return pos != PATH_INVALID_POS && pos < this->path_set.size();//由于路径信息的储存没有空洞，只要在范围大小内，一定有效
 		}
 		//获取全部路径信息的常量引用
-		const std::vector<path_info>& get_const_path_set_ref() const
+		const std::vector<path_info>& get_const_path_set_ref() const noexcept
 		{
 			return this->path_set;
 		}
 		//获取空闲的前驱位置
-		node_pos get_free_node_set()
+		node_pos get_free_node_set() noexcept
 		{
 			if (this->node_set_free.empty() == false)
 			{
@@ -365,7 +364,7 @@ namespace node_path
 			return NODE_INVALID_POS;//没有空闲返回无效值
 		}
 		//获取空闲路径编号
-		path_index get_free_path_index()
+		path_index get_free_path_index() noexcept
 		{
 			if (this->path_index_free.empty() == false)
 			{
@@ -377,7 +376,7 @@ namespace node_path
 			return PATH_INVALID_INDEX;//没有空闲返回无效值
 		}
 		//获取路径信息
-		path_info get_path_info_by_path_pos(path_pos pos) const
+		path_info get_path_info_by_path_pos(path_pos pos) const noexcept
 		{
 			if (test_validity_path_pos(pos) == false)
 				return path_info(PATH_INVALID_INDEX, path_info_base(NODE_INVALID_POS, NODE_INVALID_POS, PATH_INVALID_LEN));//没有这样的路径就返回无效的路径信息
@@ -385,7 +384,7 @@ namespace node_path
 			return this->path_set[pos];
 		}
 		//获取路径信息的指针
-		path_info* get_path_info_by_path_pos_ptr(path_pos pos)
+		path_info* get_path_info_by_path_pos_ptr(path_pos pos) noexcept
 		{
 			if (test_validity_path_pos(pos) == false)
 				return nullptr;//请求位置无效，返回空指针
@@ -393,7 +392,7 @@ namespace node_path
 			return &this->path_set[pos];
 		}
 		//获取路径信息的常量指针
-		const path_info* get_const_path_info_by_path_pos_ptr(path_pos pos) const
+		const path_info* get_const_path_info_by_path_pos_ptr(path_pos pos) const noexcept
 		{
 			if (test_validity_path_pos(pos) == false)
 				return nullptr;//请求位置无效，，返回空指针
@@ -401,7 +400,7 @@ namespace node_path
 			return &this->path_set[pos];
 		}
 		//获取指定前驱的指针
-		ahead* get_ahead_by_node_pos(node_pos pos)
+		ahead* get_ahead_by_node_pos(node_pos pos) noexcept
 		{
 			if (pos == NODE_ROOT_POS)
 				return nullptr;//请求位置无效，返回空指针
@@ -411,7 +410,7 @@ namespace node_path
 			return &this->node_set[pos];
 		}
 		//获取指定前驱的常量指针
-		const ahead* get_const_ahead_by_node_pos(node_pos pos) const
+		const ahead* get_const_ahead_by_node_pos(node_pos pos) const noexcept
 		{
 			if (pos == NODE_ROOT_POS)
 				return nullptr;//请求位置无效，返回空指针
@@ -421,7 +420,7 @@ namespace node_path
 			return &this->node_set[pos];
 		}
 		//获取路径位置
-		path_pos get_path_pos(path_index index) const
+		path_pos get_path_pos(path_index index) const noexcept
 		{
 			if (index == PATH_INVALID_INDEX)
 				return PATH_INVALID_POS;//请求路径编号无效，返回无效位置
@@ -437,10 +436,10 @@ namespace node_path
 				}
 			);//由于路径信息为按编号升序储存，这里直接二分查找
 
-			return pos_target->index == index ? pos_target - pos_begin : PATH_INVALID_POS;//需最后确认二分查找到的确实为所请求的路径
+			return pos_target->index == index ? static_cast<path_pos>(pos_target - pos_begin) : PATH_INVALID_POS;//需最后确认二分查找到的确实为所请求的路径
 		}
 		//批量获取用节点在路径中的位置获取节点的真实位置
-		bool get_node_pos_by_node_pos_get_mul(const path_info* path_info_ptr, std::vector<node_pos_get> pos, std::vector<node_pos>& save) const //pos升序
+		bool get_node_pos_by_node_pos_get_mul(const path_info* path_info_ptr, const std::vector<node_pos_get>& pos, std::vector<node_pos>& save) const//pos升序
 		{	
 
 			//因为路径节点间的连接是反向的，所以这里的位置请求集合，也就是pos，这里要求升序储存，以便从集合的末尾开始遍历
@@ -456,9 +455,9 @@ namespace node_path
 
 			save.resize(pos.size(), NODE_INVALID_POS);//先提前分配保存空间，同时全部先用无效值填充
 
-			std::vector<node_pos_get>::iterator pos_end = pos.end();
-			std::vector<node_pos_get>::iterator pos_begin = pos.begin();
-			std::vector<node_pos_get>::iterator pos_seek_begin = std::upper_bound(
+			std::vector<node_pos_get>::const_iterator pos_end = pos.end();
+			std::vector<node_pos_get>::const_iterator pos_begin = pos.begin();
+			std::vector<node_pos_get>::const_iterator pos_seek_begin = std::upper_bound(
 				pos_begin,
 				pos_end,
 				static_cast<node_pos_get>(path_info_ptr->info.len - 1),
@@ -468,7 +467,7 @@ namespace node_path
 				}
 			);//找出第一个超出范围的请求
 
-			size_t pos_start = pos_end - pos_seek_begin;//确定开始位置
+			size_t pos_start = static_cast<size_t>(pos_end - pos_seek_begin);//确定开始位置
 
 			if (pos_seek_begin == pos_begin)
 				return false;//全都是超出范围的
@@ -486,15 +485,15 @@ namespace node_path
 				//如果小于等于中点位置
 				pos_current = path_info_ptr->info.mid_pos;//遍历位置直接从中点位置开始
 				pos_get_current = pos_get_mid;//当前请求路径位置直接从中点位置开始
-				len_loop = pos_get_mid + 1 - pos.front();
+				len_loop = static_cast<size_t>(pos_get_mid + 1) - static_cast<size_t>(pos.front());
 				pos_mid_is_replaced = true;
 			}
 			else
 			{
 				//如果大于中点位置
 				pos_current = path_info_ptr->info.last_pos;//从末尾开始
-				pos_get_current = path_info_ptr->info.len - 1;
-				len_loop = path_info_ptr->info.len - pos.front();
+				pos_get_current = static_cast<node_pos_get>(path_info_ptr->info.len - 1);
+				len_loop = static_cast<size_t>(path_info_ptr->info.len - pos.front());
 			}
 
 			std::vector<node_pos>::iterator pos_save = save.end() - pos_start - 1;//计算开始储存的位置
@@ -518,7 +517,7 @@ namespace node_path
 
 					pos_current = path_info_ptr->info.mid_pos;
 					len_loop -= forward_steps;
-					pos_get_current -= forward_steps;
+					pos_get_current -= static_cast<node_pos_get>(forward_steps);
 					pos_mid_is_replaced = true;
 				}			
 				else
@@ -539,14 +538,14 @@ namespace node_path
 			bool result = get_node_pos_by_node_pos_get_mul(path_info_ptr, std::move(std::vector<node_pos_get>({ pos })), save);//单位置寻找
 			return result == true ? save.front() : NODE_INVALID_POS;
 		}
-		//自增指定路径从末尾到指定位置的节点的引用次数
-		bool add_path_part_node_ref_by_node_pos_get(path_info* path_info_ptr, node_pos_get pos)
+		//自增指定路径从末尾到根节点的引用次数
+		bool add_path_part_node_ref_by_node_pos_get(const path_info* path_info_ptr, node_pos_get pos) noexcept
 		{
 			if (path_info_ptr == nullptr)
 				return false;
 
 			ahead* node_current = get_ahead_by_node_pos(path_info_ptr->info.last_pos);
-			size_t len_loop = path_info_ptr->info.len - 1 - pos;
+			size_t len_loop = static_cast<size_t>(static_cast<node_pos_get>(path_info_ptr->info.len - 1) - pos);
 			size_t len_current = 0;
 
 			while (len_current <= len_loop)
@@ -559,7 +558,7 @@ namespace node_path
 			return true;
 		}
 		//自增指定路径中所有节点的引用次数
-		bool add_path_node_ref(path_info* path_info_ptr)
+		bool add_path_node_ref(const path_info* path_info_ptr)
 		{
 			if (path_info_ptr == nullptr)
 				return false;
@@ -612,7 +611,7 @@ namespace node_path
 			{
 				//没有空闲位置
 				this->node_set.emplace_back(new_ahead);
-				path_new_last_pos = this->node_set.size() - 1;
+				path_new_last_pos = static_cast<node_pos>(this->node_set.size() - 1);
 			}
 			else
 			{
@@ -658,6 +657,9 @@ namespace node_path
 			if (path_info_ptr == nullptr)
 				return false;//无效的路径
 
+			if (pos >= static_cast<node_pos_get>(path_info_ptr->info.len))
+				return false;
+
 			node_pos_get pos_get_mid_old = static_cast<node_pos_get>((path_info_ptr->info.len - 1) / 2);//路径中点位置
 			node_pos pos_mid = pos <= pos_get_mid_old ? NODE_INVALID_POS : path_info_ptr->info.mid_pos;//新储存中点位置，如果要独立的位置不超过中点，直接复用原先的位置即可
 			node_pos pos_last = NODE_INVALID_POS;//上一个位置
@@ -686,6 +688,7 @@ namespace node_path
 			}
 			else
 			{
+
 				if (pos_mid == NODE_INVALID_POS)
 				{
 					if (static_cast<node_pos_get>(path_info_ptr->info.len / 2) == 0)
@@ -697,8 +700,8 @@ namespace node_path
 				node_current = get_ahead_by_node_pos(pos_current);
 			}
 
-			size_t len_loop = path_info_ptr->info.len - pos - 1;
-			node_pos_get pos_get_current = path_info_ptr->info.len - 1;
+			size_t len_loop = static_cast<size_t>(static_cast<node_pos_get>(path_info_ptr->info.len - pos) - 1);
+			node_pos_get pos_get_current = static_cast<node_pos_get>(path_info_ptr->info.len - 1);
 
 			while (len_loop > 0)
 			{
@@ -739,6 +742,38 @@ namespace node_path
 		bool make_path_unique(path_info* path_info_ptr)
 		{
 			return make_path_unique_part(path_info_ptr, 0);//独立化整条路径
+		}
+		//获取单条路径的节点
+		bool get_path_single(const path_info* path_info_ptr, path& save) const
+		{
+			save.nodes.clear();
+
+			if (path_info_ptr == nullptr)
+				return false;
+
+			save.nodes.resize(static_cast<size_t>(path_info_ptr->info.len));
+
+			const ahead* ahead_current = get_const_ahead_by_node_pos(path_info_ptr->info.last_pos);
+			size_t len_loop = static_cast<size_t>(path_info_ptr->info.len);
+			size_t len_current = 0;
+
+			//开始遍历路径
+			while (len_current < len_loop)
+			{
+				save.nodes[len_loop - len_current - 1] = ahead_current->index;
+
+				if (test_validity_node_pos(ahead_current->last) == false)
+				{
+					save.nodes.clear();
+					return false;
+				}
+
+				ahead_current = get_const_ahead_by_node_pos(ahead_current->last);
+				len_current++;
+			}
+
+			save.index = path_info_ptr->index;
+			return true;			
 		}
 		//整合路径节点，最大化共享
 		bool unify_node_set()
@@ -814,7 +849,7 @@ namespace node_path
 			return true;
 		}
 		//获取系统状态
-		path_state_statistic get_state() const
+		path_state_statistic get_state() const noexcept
 		{
 			//总字节分配数
 			size_t alloc_total =
@@ -837,7 +872,7 @@ namespace node_path
 				this->path_set.size(),
 				alloc_total,
 				used_total,
-				used_total_float / alloc_total_float == 0.0f ? 1.0f : alloc_total_float
+				used_total_float / alloc_total_float
 			);
 		}
 		//清空系统
@@ -868,7 +903,7 @@ namespace node_path
 		{
 
 		}
-		~path_share()
+		~path_share() noexcept
 		{
 
 		}
@@ -879,17 +914,36 @@ namespace node_path
 			return unify_node_set();
 		}
 		//获取路径多个指定位置的节点编号
-		bool get_path_node_index_mul(path_index path, std::vector<node_pos_get> pos_mul, std::vector<node_pos>& save) const
+		bool get_path_node_index_mul(path_index path, const std::vector<node_pos_get>& pos_mul, std::vector<node_index>& save) const
 		{
+			save.clear();
+
 			const path_info* path_info_target = get_const_path_info_by_path_pos_ptr(get_path_pos(path));
 
 			if (path_info_target == nullptr)
 				return NODE_INVALID_INDEX;//无效的路径
 
-			return get_node_pos_by_node_pos_get_mul(path_info_target, pos_mul, save);
+			std::vector<node_pos> save_target;
+
+			if (get_node_pos_by_node_pos_get_mul(path_info_target, pos_mul, save_target) == false)
+				return false;
+
+			save.resize(pos_mul.size());
+
+			std::vector<node_pos>::iterator pos_current = save_target.begin();
+			std::vector<node_index>::iterator pos_save_current = save.begin();
+
+			while (pos_current != save_target.end())
+			{
+				*pos_save_current = get_const_ahead_by_node_pos(*pos_current)->index;
+				pos_current++;
+				pos_save_current++;
+			}
+
+			return true;
 		}
 		//获取路径指定位置的节点编号
-		node_index get_path_node_index(path_index path, node_pos_get pos) const
+		node_index get_path_node_index(path_index path, node_pos_get pos) const noexcept
 		{
 			const path_info* path_info_target = get_const_path_info_by_path_pos_ptr(get_path_pos(path));
 
@@ -899,60 +953,42 @@ namespace node_path
 			const ahead* ahead_target = get_const_ahead_by_node_pos(get_node_pos_by_node_pos_get(path_info_target, pos));
 			return ahead_target == nullptr ? NODE_INVALID_INDEX : ahead_target->index;//前驱获取失败：返回无效值；成功：直接读取返回
 		}
+		//获取路径长度
+		path_len get_path_len(path_index path) const noexcept
+		{
+			const path_info* info_target = get_const_path_info_by_path_pos_ptr(get_path_pos(path));
+
+			return info_target == nullptr ? PATH_INVALID_LEN : info_target->info.len;
+		}
 		//获取系统中的路径数量
-		size_t get_path_quantity() const
+		size_t get_path_quantity() const noexcept
 		{
 			return this->path_set.size();
 		}
 		//获取指定路径
 		bool get_path(path_index path_index, path& save) const
 		{
-			//先清空结果保存容器
-			save.nodes.clear();
-
 			const path_info* path_target = get_const_path_info_by_path_pos_ptr(get_path_pos(path_index));
 
-			if (path_target == nullptr)
-				return false;//无效的路径
-
-			save.nodes.resize(path_target->info.len);
-
-			const ahead* ahead_current = get_const_ahead_by_node_pos(path_target->info.last_pos);
-			size_t len_loop = path_target->info.len;
-			size_t len_current = 0;
-
-			//开始遍历路径
-			while (len_current < len_loop)
-			{
-				save.nodes[len_loop - len_current - 1] = ahead_current->index;
-
-				if (test_validity_node_pos(ahead_current->last) == false)
-				{
-					save.nodes.clear();
-					return false;
-				}
-
-				ahead_current = get_const_ahead_by_node_pos(ahead_current->last);
-				len_current++;
-			}
-
-			save.index = path_target->index;
-			return true;
+			return get_path_single(path_target, save);
 		}
 		//获取全部路径
 		bool get_path_all(std::vector<path>& save) const
 		{
-			save.clear();//先清空结果保存容器
-
 			const std::vector<path_info>& path_set_target = get_const_path_set_ref();
-			std::vector<path_info>::const_iterator path = path_set_target.begin();
+
+			save.resize(path_set_target.size());
+
+			std::vector<path_info>::const_iterator path_current = path_set_target.begin();
+			std::vector<path>::iterator path_save_current = save.begin();
 
 			//开始遍历所有路径
-			for (std::vector<path_info>::const_iterator path = path_set_target.begin(); path != path_set_target.end(); path++)
-			{
-				save.emplace_back();
-				if (get_path(path->index, save.back()) == false)
+			while (path_current != path_set_target.end())
+			{			
+				if (get_path_single(&*path_current, *path_save_current) == false)
 					return false;
+				path_current++;
+				path_save_current++;
 			}
 
 			return true;
@@ -978,9 +1014,6 @@ namespace node_path
 		//新建分支
 		path_index create_branch(path_index path, node_pos_get make_pos, node_index index)
 		{
-			if (test_validity_node_index(index) == false)
-				return PATH_INVALID_INDEX;
-
 			path_info* path_info_target = get_path_info_by_path_pos_ptr(get_path_pos(path));
 			std::vector<node_pos> save;
 
@@ -994,7 +1027,7 @@ namespace node_path
 			if (test_validity_node_pos(pos_ahead_new) == false)
 				return PATH_INVALID_INDEX;//新建前驱失败
 
-			path_index path_new = create_path_info(path_info_base(pos_ahead_new, save.front(), make_pos + 2));
+			path_index path_new = create_path_info(path_info_base(pos_ahead_new, save.front(), static_cast<path_len>(make_pos + 2)));
 
 			if (test_validity_path_index(path_new) == false)
 			{
@@ -1090,7 +1123,7 @@ namespace node_path
 			return true;
 		}
 		//在路径的末尾批量添加节点编号
-		bool add_path_node(path_index path, std::vector<node_index> add_node)
+		bool add_path_node(path_index path, const std::vector<node_index>& add_node)
 		{
 			if (add_node.empty() == true)
 				return true;//空的请求
@@ -1105,7 +1138,7 @@ namespace node_path
 			if (test_validity_node_pos(pos_ahead_last) == false)
 				return false;//新建前驱失败
 
-			node_pos_get pos_get_mid_new = static_cast<node_pos_get>((path_target_info->info.len + add_node.size() - 1) / 2);//新的路径中点位置
+			node_pos_get pos_get_mid_new = static_cast<node_pos_get>((static_cast<size_t>(path_target_info->info.len) + add_node.size() - 1) / 2);//新的路径中点位置
 			node_pos pos_mid_new = NODE_INVALID_POS;
 
 			//如果新的路径中点位置仍在原路径范围内
@@ -1120,8 +1153,8 @@ namespace node_path
 				}
 			}
 
-			std::vector<node_index>::iterator add_target = add_node.begin() + 1;
-			node_pos_get pos_mid_target = pos_get_mid_new - path_target_info->info.len;//如果如果新的路径中点位置超出原路径范围，这里计算多少步后达到目标位置
+			std::vector<node_index>::const_iterator add_target = add_node.begin() + 1;
+			node_pos_get pos_mid_target = pos_get_mid_new - static_cast<node_pos_get>(path_target_info->info.len);//如果如果新的路径中点位置超出原路径范围，这里计算多少步后达到目标位置
 
 			//开始遍历加入
 			while (add_target != add_node.end())
@@ -1142,7 +1175,7 @@ namespace node_path
 		//在路径的末尾添加单个节点编号
 		bool add_path_node_single(path_index path, node_index add_node)
 		{
-			return add_path_node(path, std::move(std::vector<node_index>({ add_node })));//但节点加入
+			return add_path_node(path, std::move(std::vector<node_index>({ add_node })));//单节点加入
 		}
 		//交换一个或两个路径的片段
 		bool exchange_path_part(const path_part& path_one, const path_part& path_sec)
@@ -1290,7 +1323,7 @@ namespace node_path
 					path_info_one->info.len + static_cast<path_len>(-len_delta) :
 					path_info_one->info.len - static_cast<path_len>(len_delta);
 
-				size_t len_loop = path_info_one->info.len / 2;
+				size_t len_loop = static_cast<size_t>(path_info_one->info.len / 2);
 				node_pos pos_mid = path_info_one->info.last_pos;
 
 				while (len_loop > 0)
@@ -1306,7 +1339,7 @@ namespace node_path
 					path_info_sec->info.len + static_cast<path_len>(len_delta) :
 					path_info_sec->info.len - static_cast<path_len>(-len_delta);
 
-				len_loop = path_info_sec->info.len / 2;
+				len_loop = static_cast<size_t>(path_info_sec->info.len / 2);
 				pos_mid = path_info_sec->info.last_pos;
 
 				while (len_loop > 0)
@@ -1321,7 +1354,7 @@ namespace node_path
 			return true;
 		}
 		//修改路径中指定位置的节点编号
-		bool change_path_node(path_index path, node_pos_get pos, node_index index)
+		bool change_path_node(path_index path, node_pos_get pos, node_index index) noexcept
 		{
 			path_info* path_info_target = get_path_info_by_path_pos_ptr(get_path_pos(path));
 
@@ -1340,7 +1373,7 @@ namespace node_path
 			return true;
 		}
 		//批量删除路径中的节点编号
-		bool del_path_node(path_index path, std::vector<node_pos_get> del_node)
+		bool del_path_node(path_index path, std::vector<node_pos_get>& del_node)
 		{
 			if (del_node.empty() == true)
 				return true;//空的请求
@@ -1357,7 +1390,7 @@ namespace node_path
 			size_t len_del = del_node.size();
 			node_pos_get node_last_del = del_node.back();
 
-			if (node_last_del >= path_info_target->info.len)
+			if (node_last_del >= static_cast<node_pos_get>(path_info_target->info.len))
 				return false;//存在超出范围的请求
 
 			if (make_path_unique_part(path_info_target, del_node.front()) == false)
@@ -1372,7 +1405,7 @@ namespace node_path
 			node_pos pos_current = save.front();
 			node_pos pos_info = path_info_target->info.last_pos;
 
-			size_t len_loop = node_last_del - del_node.front();
+			size_t len_loop = static_cast<size_t>(node_last_del - del_node.front());
 			size_t len_current = 0;
 			node_pos_get pos_current_get = node_last_del;
 
@@ -1409,7 +1442,7 @@ namespace node_path
 				len_current++;
 			}
 
-			path_len len_new = path_info_target->info.len - len_del;
+			path_len len_new = path_info_target->info.len - static_cast<path_len>(len_del);
 
 			if (len_new == 0)
 			{
@@ -1417,7 +1450,7 @@ namespace node_path
 				return true;
 			}
 
-			len_loop = len_new / 2;
+			len_loop = static_cast<size_t>(len_new / 2);
 			node_pos pos_mid = pos_info;
 
 			//更新中点位置
@@ -1433,7 +1466,8 @@ namespace node_path
 		//删除路径中指定位置的节点编号
 		bool del_path_node_single(path_index path, node_pos_get del_node)
 		{
-			return del_path_node(path, std::move(std::vector<node_pos_get>({ del_node })));//单节点删除
+			std::vector<node_pos_get> del_target({ del_node });
+			return del_path_node(path, del_target);//单节点删除
 		}
 		//删除指定路径
 		bool del_path(path_index path)
@@ -1451,7 +1485,7 @@ namespace node_path
 			node_pos pos_last = NODE_INVALID_POS;
 			node_pos pos_current = path_target->info.last_pos;
 			ahead* node_current = get_ahead_by_node_pos(pos_current);
-			size_t len_loop = path_target->info.len;
+			size_t len_loop = static_cast<size_t>(path_target->info.len);
 			size_t len_current = 0;
 
 			//开始逐个删除前驱
@@ -1479,18 +1513,18 @@ namespace node_path
 		}
 	public:
 		//统计系统信息
-		path_state_statistic get_stastic() const
+		path_state_statistic get_stastic() const noexcept
 		{
 			return std::move(get_state());
 		}
 	public:
 		//获取路径指定位置的节点编号
-		node_index operator()(path_index path, node_pos_get pos)
+		node_index operator()(path_index path, node_pos_get pos) noexcept
 		{
 			return get_path_node_index(path, pos);
 		}
 		//修改路径中指定位置的节点编号
-		bool operator()(path_index path, node_pos_get pos, node_index index)
+		bool operator()(path_index path, node_pos_get pos, node_index index) noexcept
 		{
 			return change_path_node(path, pos, index);
 		}
