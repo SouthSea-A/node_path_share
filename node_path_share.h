@@ -1,6 +1,7 @@
 #pragma once
 #include <vector>
 #include <algorithm>
+#include <cstdint>
 #include <unordered_map>
 
 namespace node_path
@@ -782,68 +783,81 @@ namespace node_path
 			if (get_path_all(path_all) == false)//先获取全部路径的全部节点
 				return false;
 
-			//清除原来的数据
-			this->node_set.clear();
-			this->node_set_free.clear();
+			std::vector<ahead> node_set_new;
+			size_t node_ref_total = 0;
+			for (std::vector<path>::const_iterator path_each = path_all.begin(); path_each != path_all.end(); path_each++)
+				node_ref_total += path_each->nodes.size();
+			node_set_new.reserve(node_ref_total);
 
-			std::unordered_map<path_unify_construct, std::vector<std::pair<path_index, size_t>>, path_unify_hash> floor_statistic;//按照层级，统计所有相同的信息
-			size_t floor_current = 0;//当前层级
+			std::unordered_map<path_unify_construct, node_pos, path_unify_hash> node_unify_pos;
+			node_unify_pos.reserve(node_ref_total);
 
-			while (path_all.empty() == false)
+			std::vector<std::pair<path_index, path_info_base>> path_info_new;
+			path_info_new.reserve(path_all.size());
+
+			for (std::vector<path>::const_iterator path_each = path_all.begin(); path_each != path_all.end(); path_each++)
 			{
-				floor_statistic.clear();
+				if (path_each->nodes.empty() == true)
+					return false;
 
-				size_t pos_path_each = 0;
+				node_pos pos_last = NODE_ROOT_POS;
+				node_pos pos_mid = NODE_INVALID_POS;
+				const size_t pos_mid_target = (path_each->nodes.size() - 1) / 2;
 
-				//遍历每个层级中的所有节点
-				while (pos_path_each < path_all.size())
+				for (size_t pos_current = 0; pos_current < path_each->nodes.size(); pos_current++)
 				{
-					std::vector<path>::iterator path_each = path_all.begin() + pos_path_each;
+					path_unify_construct node_key(pos_last, path_each->nodes[pos_current]);
+					std::unordered_map<path_unify_construct, node_pos, path_unify_hash>::iterator node_find = node_unify_pos.find(node_key);
+					node_pos pos_new = NODE_INVALID_POS;
 
-					if (floor_current < path_each->nodes.size())
+					if (node_find == node_unify_pos.end())
 					{
-						path_unify_construct temp;
-
-						//构建统计信息
-						if (floor_current == 0) temp = path_unify_construct(NODE_ROOT_POS, path_each->nodes.front());//如果当前层级是根节点
-						else temp = path_unify_construct(static_cast<node_pos>(path_each->nodes[floor_current - 1]), path_each->nodes[floor_current]);
-
-						floor_statistic[temp].emplace_back(std::make_pair(path_each->index, pos_path_each));//统计
-						pos_path_each++;
+						pos_new = static_cast<node_pos>(node_set_new.size());
+						node_set_new.emplace_back(pos_last, path_each->nodes[pos_current], 0);
+						node_unify_pos.emplace(node_key, pos_new);
 					}
 					else
 					{
-						path_all.erase(path_all.begin() + pos_path_each);//当前层级超出了路径长度范围，表明当前路径已经处理完毕，去除当前路径，直到所有路径处理完毕
-					}
-				}
-
-				std::unordered_map<path_unify_construct, std::vector<std::pair<path_index, size_t>>, path_unify_hash>::iterator statistic_each = floor_statistic.begin();
-
-				//遍历上边的所有统计
-				while (statistic_each != floor_statistic.end())
-				{
-					node_pos pos_new = create_ahead(ahead(statistic_each->first.last, statistic_each->first.current, statistic_each->second.size()));
-
-					std::vector<std::pair<path_index, size_t>>::iterator path_ref = statistic_each->second.begin();
-
-					//为每个路径构建
-					while (path_ref != statistic_each->second.end())
-					{
-						path_info* path_ref_single = get_path_info_by_path_pos_ptr(get_path_pos(path_ref->first));
-
-						path_ref_single->info.last_pos = pos_new;
-
-						if (floor_current == static_cast<size_t>((path_ref_single->info.len - 1) / 2))
-							path_ref_single->info.mid_pos = pos_new;//更新中点位置
-
-						path_all[path_ref->second].nodes[floor_current] = static_cast<node_index>(pos_new);//重复利用空间，保存当前前驱的储存位置
-						path_ref++;
+						pos_new = node_find->second;
 					}
 
-					statistic_each++;
+					node_set_new[pos_new].ref++;
+
+					if (pos_current == pos_mid_target)
+						pos_mid = pos_new;
+
+					pos_last = pos_new;
 				}
 
-				floor_current++;
+				if (pos_mid == NODE_INVALID_POS || pos_last == NODE_INVALID_POS)
+					return false;
+
+				path_info_new.emplace_back(path_each->index, path_info_base(pos_last, pos_mid, static_cast<path_len>(path_each->nodes.size())));
+			}
+
+			for (std::vector<ahead>::const_iterator node_each = node_set_new.begin(); node_each != node_set_new.end(); node_each++)
+			{
+				if (node_each->test_validity_index() == false || node_each->test_validity_ref() == false)
+					return false;
+				if (node_each->last != NODE_ROOT_POS && node_each->last >= node_set_new.size())
+					return false;
+			}
+
+			for (std::vector<std::pair<path_index, path_info_base>>::const_iterator path_each = path_info_new.begin(); path_each != path_info_new.end(); path_each++)
+			{
+				if (test_validity_path_pos(get_path_pos(path_each->first)) == false)
+					return false;
+			}
+
+			this->node_set = std::move(node_set_new);
+			this->node_set_free.clear();
+
+			for (std::vector<std::pair<path_index, path_info_base>>::const_iterator path_each = path_info_new.begin(); path_each != path_info_new.end(); path_each++)
+			{
+				path_info* path_info_target = get_path_info_by_path_pos_ptr(get_path_pos(path_each->first));
+				path_info_target->info.last_pos = path_each->second.last_pos;
+				path_info_target->info.mid_pos = path_each->second.mid_pos;
+				path_info_target->info.len = path_each->second.len;
 			}
 
 			return true;
